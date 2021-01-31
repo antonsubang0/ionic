@@ -1,0 +1,7 @@
+{
+  "name": "ListPanel",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue"
+}
