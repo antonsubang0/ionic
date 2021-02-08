@@ -1,0 +1,19 @@
+{
+  "appId": "io.ion.listpanel",
+  "appName": "ListPanel",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "dist",
+  "linuxAndroidStudioPath": "/home/anton/Downloads/ZKLibrary-master/android-studio/bin/studio.sh",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_launcher.png",
+      "iconColor": "#488AFF",
+      "sound": "beep.wav"
+    }
+  },
+  "cordova": {}
+}

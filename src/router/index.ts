@@ -8,6 +8,10 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/tabs/tab1'
   },
   {
+    path: '/login',
+    component: () => import('@/views/Login.vue')
+  },
+  {
     path: '/tabs/',
     component: Tabs,
     children: [
@@ -20,8 +24,20 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/Tab1.vue')
       },
       {
-        path: 'tab2',
-        component: () => import('@/views/Tab2.vue')
+        path: 'create',
+        component: () => import('@/views/Create.vue')
+      },
+      {
+        path: 'list',
+        component: () => import('@/views/List.vue')
+      },
+      {
+        path: 'scan',
+        component: () => import('@/views/Scan.vue')
+      },
+      {
+        path: 'history',
+        component: () => import('@/views/History.vue')
       },
       {
         path: 'tab3',

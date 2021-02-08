@@ -11,18 +11,24 @@
           <ion-title size="large">Tab 3</ion-title>
         </ion-toolbar>
       </ion-header>
-      
-      <ExploreContainer name="Tab 3 page" />
+      <ion-button color="primary" @click="scan">Primary</ion-button>
     </ion-content>
   </ion-page>
 </template>
 
 <script lang="ts">
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/vue';
-import ExploreContainer from '@/components/ExploreContainer.vue';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton } from '@ionic/vue';
+import { BarcodeScanner } from '@ionic-native/barcode-scanner';
 
 export default  {
   name: 'Tab3',
-  components: { ExploreContainer, IonHeader, IonToolbar, IonTitle, IonContent, IonPage }
+  components: { IonButton, IonHeader, IonToolbar, IonTitle, IonContent, IonPage },
+  methods : {
+    scan : () => {
+      BarcodeScanner.scan().then((res) => {
+        console.log(res);
+      })
+    },
+  }
 }
 </script>
