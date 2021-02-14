@@ -60,8 +60,7 @@
             <ion-item class="summarycs">
               <ion-label>Hatchery</ion-label>
               <ion-select placeholder="Select One" :value="hatchery" v-model="hatchery" @ionChange="autoList(hatchery)">
-                <ion-select-option value="Subang">Subang</ion-select-option>
-                <ion-select-option value="Purwakarta">Purwakarta</ion-select-option>
+                <ion-select-option v-for="listh in listhatchery" :key="listh.id" :value="listh.nama">{{ listh.nama }}</ion-select-option>
               </ion-select>
             </ion-item>
           </ion-list>
@@ -69,56 +68,90 @@
         <ion-list v-if="lengthlist==0" lines="full" class="ion-no-margin cslisttop text-centercs">
           <p class="dangercs mtlistnotfound">Data Not Found</p>
         </ion-list>
-        <ion-list v-else lines="full" class="ion-no-margin cslisttop">
-          <ion-item v-for="listitem in listpanel" :key="listitem.key" @click="detail(listitem.key)">
-            <ion-avatar slot="start">
-              <img :src="listitem.urlImage">
-            </ion-avatar>
-            <ion-label>
-              <h2>{{ listitem.namapanel }}</h2>
-              <h3>{{ listitem.nopanel }} <span> {{ listitem.hatchery }} </span><span :class="{ 'successcs': listitem.rating=='Good', 'warningcs': listitem.rating=='Moderate', 'dangercs': listitem.rating=='Poor' }"> ( {{ listitem.rating }} )</span></h3>
-              <p>ELCB : {{ listitem.elcb }}, Arrester : {{ listitem.arrester }}, Grouding : {{ listitem.grounding }}, Description : {{ listitem.description }}</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
+        <div v-else>
+          <ion-list lines="full" class="ion-no-margin cslisttop">
+            <ion-item v-for="listitem in partpanel" :key="listitem.key" @click="detail(listitem.key)">
+              <ion-avatar slot="start">
+                <img :src="listitem.urlImage">
+              </ion-avatar>
+              <ion-label>
+                <h2>{{ listitem.namapanel }}</h2>
+                <h3>{{ listitem.nopanel }} <span> {{ listitem.hatchery }} </span><span :class="{ 'successcs': listitem.rating=='Good', 'warningcs': listitem.rating=='Moderate', 'dangercs': listitem.rating=='Poor' }"> ( {{ listitem.rating }} )</span></h3>
+                <p>ELCB : {{ listitem.elcb }}, Arrester : {{ listitem.arrester }}, Grouding : {{ listitem.grounding }}, Description : {{ listitem.description }}</p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+          <ion-infinite-scroll
+            @ionInfinite="loadData($event)" 
+            threshold="100px" 
+            id="infinite-scroll"
+            :disabled="isDisabled">
+            <ion-infinite-scroll-content
+              loading-spinner="bubbles"
+              loading-text="Loading more data...">
+            </ion-infinite-scroll-content>
+          </ion-infinite-scroll>
+        </div>
       </div>
     </ion-content>
   </ion-page>
 </template>
 <script>
-import { IonPage, IonLoading, IonContent, IonList, IonItem, IonLabel, IonAvatar, IonHeader, IonToolbar, IonTitle, IonCol, IonRow, IonIcon, IonSelectOption, IonSelect } from '@ionic/vue';
+import { IonPage, IonLoading, IonContent, IonList, IonItem, IonLabel, IonAvatar, IonHeader, IonToolbar, IonTitle, IonCol, IonRow, IonIcon, IonSelectOption, IonSelect, IonInfiniteScroll, IonInfiniteScrollContent } from '@ionic/vue';
 import { arrowUndoCircle } from 'ionicons/icons';
+import { ref } from 'vue';
 // import { Camera } from 'ionic-native';
 // import { useRouter } from 'vue-router';
 import firebase from '../config/';
 
 export default  {
   name: 'List',
-  components: { IonPage, IonLoading, IonContent, IonList, IonItem, IonLabel, IonAvatar, IonHeader, IonToolbar, IonTitle, IonCol, IonRow, IonIcon, IonSelectOption, IonSelect },
+  components: { IonPage, IonLoading, IonContent, IonList, IonItem, IonLabel, IonAvatar, IonHeader, IonToolbar, IonTitle, IonCol, IonRow, IonIcon, IonSelectOption, IonSelect, IonInfiniteScroll, IonInfiniteScrollContent },
   data() {
     return {
       constloading : true,
       listpanel: null,
       lengthlist : 0,
+      listhatchery : null,
       good : null,
       med : null,
       poor : null,
       datadetail : null,
-      hatchery : 'Purwakarta',
+      hatchery : null,
       history : null,
+      partpanel : [],
+      awalpage : 0,
+      akhirpage : 10,
     }
   },
   mounted () {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
-        this.autoList(this.hatchery);
+        this.allhatchery();
       } else {
         this.constloading = false;
       }
     });
   },
   methods : {
+    allhatchery : async function () {
+      await firebase.database().ref('/hatchery').once('value', (snapshot) => {
+        const listhatcheryx = [];
+        snapshot.forEach((childSnapshot) => {
+          const sement = {
+            id : childSnapshot.key,
+            nama : childSnapshot.val().nama,
+          };
+          listhatcheryx.push(sement);
+        })
+        this.listhatchery = listhatcheryx;
+        this.hatchery = 'Subang';
+        this.autoList(this.hatchery);
+      });
+    },
     autoList : async function (hatchery) {
+      this.awalpage = 0;
+      this.akhirpage = 10;
       this.constloading = true;
       firebase.database().ref('/datapanel/').orderByChild('hatchery').equalTo(hatchery).once('value', (snapshot) => {
         const listx = [];
@@ -155,6 +188,7 @@ export default  {
           listx.push(temp);
         })
         this.listpanel = listx;
+        this.partpanel = this.listpanel.slice(this.awalpage, this.akhirpage);
         this.good = G;
         this.med = M;
         this.poor = P;
@@ -174,11 +208,38 @@ export default  {
     },
     backtolist : function () {
       this.datadetail = null;
+    },
+    loadData : async function (ev) {
+      const pushdatax = await this.pushdata();
+      console.log(pushdatax);
+      ev.target.complete();
+    },
+    pushdata : function () {
+      const infload = document.getElementsByClassName('infinite-loading');
+      infload[0].style.display="block";
+      this.awalpage = this.awalpage + 10;
+      this.akhirpage = this.akhirpage + 10;
+      const tempal = this.listpanel.slice(this.awalpage, this.akhirpage);
+      if (tempal.length>0) {
+        setTimeout(() => {
+          for (let i = 0; i < tempal.length; i++) {
+            this.partpanel.push(tempal[i]);
+          }
+          infload[0].style.display="none";
+        }, 3000)
+      } else {
+        setTimeout(() => {
+          infload[0].style.display="none";
+        }, 3000)
+      }
+      return true;
     }
   },
   setup(){
+    const isDisabled = ref(false);
     return {
-      arrowUndoCircle
+      isDisabled,
+      arrowUndoCircle,
     }
   }
 }

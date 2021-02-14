@@ -8,7 +8,7 @@
     <ion-header>
       <ion-toolbar class="logobar">
         <img src="../../public/assets/cpi.jpg" class="logoicon" />
-        <ion-title>History Panel</ion-title>
+        <ion-title>Schedule</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
@@ -52,51 +52,73 @@
         <a class="backhomecs" href="/">
           <ion-icon :icon="arrowUndoCircle"></ion-icon>
         </a>
-        <ion-list lines="full" class="ion-no-margin cslistbottom">
-          <ion-item class="summarycs">
-            <ion-label>Hatchery</ion-label>
-            <ion-select placeholder="Select One" :value="hatchery" v-model="hatchery" @ionChange="autoList(hatchery)">
-              <ion-select-option v-for="listh in listhatchery" :key="listh.id" :value="listh.nama">{{ listh.nama }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </ion-list>
-        <ion-list v-if="lengthlist==0" lines="full" class="ion-no-margin cslisttop text-centercs">
-          <p class="dangercs mtlistnotfound">Data Not Found</p>
-        </ion-list>
-        <ion-list v-else lines="full" class="ion-no-margin cslisttop">
-          <ion-item v-for="listitem in parthistory" :key="listitem.key" @click="detail(listitem.qrcode)">
-            <ion-label>
-              <h4>{{ listitem.namapanel }} /  {{ listitem.nopanel }} / {{ listitem.hatchery }}</h4>
-              <p>Update : {{ listitem.update }}</p>
-              <p>Oleh : {{ listitem.email }}, Date : {{ listitem.date }}</p>
-            </ion-label>
-          </ion-item>
-          <ion-infinite-scroll
-            @ionInfinite="loadData($event)" 
-            threshold="100px" 
-            id="infinite-scroll"
-            :disabled="isDisabled">
-            <ion-infinite-scroll-content
-              loading-spinner="bubbles"
-              loading-text="Loading more data...">
-            </ion-infinite-scroll-content>
-          </ion-infinite-scroll>
-        </ion-list>
+        <div>
+          <div class="text-centercs">
+            <h6 class="navigasisch"><span class="successcs sttdate">{{ hdate }}</span><span class="radcs" @click="minusSatu"><ion-icon :icon="arrowBackOutline"></ion-icon></span><span class="radcs" @click="plusSatu"><ion-icon :icon="arrowForwardOutline"></ion-icon></span></h6>
+          </div>
+          <ion-list lines="full" class="ion-no-margin cslistbottom">
+            <ion-item class="summarycs">
+              <ion-label>Hatchery</ion-label>
+              <ion-select placeholder="Select One" :value="hatchery" v-model="hatchery" @ionChange="autoList(hatchery)">
+                <ion-select-option v-for="listh in listhatchery" :key="listh.id" :value="listh.nama">{{ listh.nama }}</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </ion-list>
+          <ion-list v-if="lengthlist==0" lines="full" class="ion-no-margin cslisttop text-centercs">
+            <p class="dangercs mtlistnotfound">Data Not Found</p>
+          </ion-list>
+          <ion-list v-else lines="full" class="ion-no-margin cslisttop">
+            <ion-item v-for="listitem in listhistory" :key="listitem.key" @click="detail(listitem.qrcode)">
+              <ion-label>
+                <h4>{{ listitem.namapanel }} /  {{ listitem.nopanel }} / {{ listitem.hatchery }}</h4>
+                <p>Last Update : {{ listitem.date }}</p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
       </div>
     </ion-content>
   </ion-page>
 </template>
+<style>
+  .navigasisch {
+    position: fixed;
+    top: 88px;
+    right: 20px;
+    font-size: 20px;
+    z-index: 10;
+    color: #fff;
+    text-align: center;
+  }
+  span.radcs {
+    padding: 8px 5px 3px 5px;
+    position: relative;
+    border-radius: 50%;
+    margin-left: 10px;
+    background-color: #777;
+    cursor: pointer;
+  }
+  .sttdate {
+    font-size: 12px;
+    margin-left: 6px;
+    background-color: #777;
+    padding: 5px;
+    width: 78px;
+    border-radius: 10px;
+    position: absolute;
+    top: 40px;
+  }
+</style>
 <script>
-import { IonPage, IonCol, IonRow, IonIcon, IonLoading, IonContent, IonList, IonItem, IonLabel, IonHeader, IonToolbar, IonTitle, IonSelectOption, IonSelect, IonInfiniteScroll, IonInfiniteScrollContent } from '@ionic/vue';
-import { arrowUndoCircle } from 'ionicons/icons';
+import { IonPage, IonCol, IonRow, IonIcon, IonLoading, IonContent, IonList, IonItem, IonLabel, IonHeader, IonToolbar, IonTitle, IonSelectOption, IonSelect } from '@ionic/vue';
+import { arrowUndoCircle, arrowBackOutline, arrowForwardOutline } from 'ionicons/icons';
 // import { Camera } from 'ionic-native';
 // import { useRouter } from 'vue-router';
 import firebase from '../config/';
-import { ref } from 'vue';
 
 export default  {
   name: 'List',
-  components: { IonPage, IonCol, IonRow, IonIcon, IonLoading, IonContent, IonList, IonItem, IonLabel, IonHeader, IonToolbar, IonTitle, IonSelectOption, IonSelect, IonInfiniteScroll, IonInfiniteScrollContent },
+  components: { IonPage, IonCol, IonRow, IonIcon, IonLoading, IonContent, IonList, IonItem, IonLabel, IonHeader, IonToolbar, IonTitle, IonSelectOption, IonSelect },
   data() {
     return {
       constloading : true,
@@ -108,9 +130,9 @@ export default  {
       datadetail : null,
       hatchery : null,
       history: null,
-      parthistory : [],
-      awalpage : 0,
-      akhirpage : 10,
+      sdate : null,
+      hdate : null,
+      sttdate : 0,
       listhatchery : null,
     }
   },
@@ -140,37 +162,43 @@ export default  {
       });
     },
     autoList : async function (hatchery) {
-      this.awalpage = 0;
-      this.akhirpage = 10;
       this.constloading = true;
-      await firebase.database().ref('/log/').orderByChild('hatchery').equalTo(hatchery).once('value', (snapshot) => {
+      this.sdate = new Date();
+      this.sdate.setDate(this.sdate.getDate() + this.sttdate);
+      this.hdate = this.formattgl(this.sdate);
+      await firebase.database().ref('/datapanel/').orderByChild('hatchery').equalTo(hatchery).once('value', (snapshot) => {
         const listx = [];
         snapshot.forEach((childSnapshot) => {
           const childKey = childSnapshot.key;
           const childData = childSnapshot.val();
-          const temp = {
-            qrcode : childData.qrcode,
-            key : childKey,
-            hatchery : childData.hatchery,
-            nopanel : childData.nopanel,
-            namapanel : childData.namapanel,
-            time : childData.time,
-            date : childData.date,
-            schedule : childData.schedule,
-            email : childData.email,
-            update : childData.update,
-          };
-          listx.push(temp);
+          if (this.hdate == childData.schedule) {
+            const temp = {
+              key : childKey,
+              qrcode : childData.qrcode,
+              hatchery : childData.hatchery,
+              nopanel : childData.nopanel,
+              namapanel : childData.namapanel,
+              elcb : childData.elcb,
+              arrester : childData.arrester,
+              grounding : childData.grounding,
+              time : childData.time,
+              date : this.formattgl(childData.date),
+              schedule : childData.schedule,
+              description : childData.description,
+              urlImage : childData.urlImage,
+              rating : childData.rating,
+            };
+            listx.push(temp);
+          }
         })
         this.listhistory = listx;
-        this.parthistory = this.listhistory.slice(this.awalpage, this.akhirpage);
         this.constloading = false;
         this.lengthlist = listx.length;
       })
     },
     detail : async function (qrcode) {
       this.constloading = true;
-      await firebase.database().ref('/datapanel').orderByChild('qrcode').equalTo(qrcode).once('value').then((snapshot) => {
+      await firebase.database().ref('/datapanel/').orderByChild('qrcode').equalTo(qrcode).once('value').then((snapshot) => {
         snapshot.forEach((childSnapshot) => {
           this.datadetail = childSnapshot.val();
         });
@@ -183,37 +211,30 @@ export default  {
     backtolist : function () {
       this.datadetail = null;
     },
-    loadData : async function (ev) {
-      const pushdatax = await this.pushdata();
-      console.log(pushdatax);
-      ev.target.complete();
+    formattgl : function (data) {
+      const newdate = new Date(data);
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const bln = newdate.getMonth();
+      const bln1 = months[bln];
+      const tgl = newdate.getDate();
+      const thn = newdate.getFullYear().toString().substr(-2);
+      const tglfull = tgl + ' ' + bln1 + ' ' + thn;
+      return tglfull;
     },
-    pushdata : function () {
-      const infload = document.getElementsByClassName('infinite-loading');
-      infload[0].style.display="block";
-      this.awalpage = this.awalpage + 10;
-      this.akhirpage = this.akhirpage + 10;
-      const tempal = this.listhistory.slice(this.awalpage, this.akhirpage);
-      if (tempal.length>0) {
-        setTimeout(() => {
-          for (let i = 0; i < tempal.length; i++) {
-            this.parthistory.push(tempal[i]);
-          }
-          infload[0].style.display="none";
-        }, 3000)
-      } else {
-        setTimeout(() => {
-          infload[0].style.display="none";
-        }, 3000)
-      }
-      return true;
+    plusSatu : function () {
+      this.sttdate += 1;
+      this.autoList(this.hatchery);
+    },
+    minusSatu : function () {
+      this.sttdate -= 1;
+      this.autoList(this.hatchery);
     }
   },
   setup(){
-    const isDisabled = ref(false);
     return {
-      isDisabled,
-      arrowUndoCircle
+      arrowUndoCircle,
+      arrowBackOutline, 
+      arrowForwardOutline
     }
   }
 }

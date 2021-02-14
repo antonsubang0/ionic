@@ -215,11 +215,10 @@
   }
 </style>
 <script>
-import { IonTabs, IonPage, IonLoading, useBackButton } from '@ionic/vue';
+import { IonTabs, IonPage, IonLoading } from '@ionic/vue';
 import { ellipse, square, triangle } from 'ionicons/icons';
 import firebase from '../config/';
-import { Plugins } from '@capacitor/core';
-const { LocalNotifications, App } = Plugins;
+import { LocalNotifications } from '@ionic-native/local-notifications';
 
 
 export default {
@@ -247,25 +246,15 @@ export default {
     },
     schedule : function () {
       LocalNotifications.schedule({
-        notifications: [
-          {
-            title: "List Panel",
-            body: "Read your schedule.",
-            id: 1,
-            schedule: { every: "day", count : 5},
-            sound: null,
-            attachments: null,
-            actionTypeId: "",
-            extra: null
-          }
-        ]
+        title: 'List Panel',
+        text: 'Check schedule on the ListPanel',
+        trigger: { every: { hour: 6, minute: 10 } },
+        smallIcon: 'res://ic_launcher.png',
+        icon: 'res://ic_launcher.png',
       });
     }
   },
   setup() {
-    useBackButton(-1, () => {
-        App.exitApp();
-    });
     return {
       ellipse, 
       square, 

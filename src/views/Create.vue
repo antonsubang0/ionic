@@ -20,7 +20,7 @@
           <ion-row>
             <ion-col>
               <div id="canvas">
-                <qrcode-vue :value="this.time + this.hatchery + this.nopanel" :size="size" level="H" renderAs="canvas" />
+                <qrcode-vue :value="(hatchery) ? time + hatchery + nopanel : qrvalue" :size="size" level="H" renderAs="canvas" />
               </div>
             </ion-col>
             <ion-col>
@@ -34,17 +34,16 @@
         <ion-item>
           <ion-label>Hatchery</ion-label>
           <ion-select placeholder="Select One" :value="hatchery" v-model="hatchery">
-            <ion-select-option value="Subang">Subang</ion-select-option>
-            <ion-select-option value="Purwakarta">Purwakarta</ion-select-option>
+            <ion-select-option v-for="listh in listhatchery" :key="listh.id" :value="listh.nama">{{ listh.nama }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item>
-          <ion-label position="fixed" autocomplete="off">Number</ion-label>
-          <ion-input placeholder="Input panel number" class="textright" type="number" v-model="nopanel"></ion-input>
+          <ion-label position="fixed">Number</ion-label>
+          <ion-input placeholder="Input panel number" class="textright" type="number" v-model="nopanel" autocomplete="off"></ion-input>
         </ion-item>
         <ion-item>
-          <ion-label position="fixed" autocomplete="off">Name</ion-label>
-          <ion-input placeholder="Input panel name" type="text" class="inputtext textright" v-model="namapanel"></ion-input>
+          <ion-label position="fixed">Name</ion-label>
+          <ion-input placeholder="Input panel name" type="text" class="inputtext textright" v-model="namapanel" autocomplete="off"></ion-input>
         </ion-item>
         <ion-item>
           <ion-label>ELCB</ion-label>
@@ -85,7 +84,7 @@
         </ion-item>
         <ion-item>
           <ion-label position="floating">Description</ion-label>
-          <ion-textarea :value="description" v-model="description"></ion-textarea>
+          <ion-textarea :value="description" v-model="description" autocomplete="off"></ion-textarea>
         </ion-item>
         <div class="centercs logincs mtcs">
           <ion-button color="primary" @click="actionCreate">Save</ion-button>
@@ -112,11 +111,12 @@ export default  {
   data() {
     return {
       constloading : true,
-      qrvalue: 'subang',
+      qrvalue: 'Subang',
       size: 150,
+      listhatchery : null,
       interval: true,
       email: null,
-      hatchery : 'Subang',
+      hatchery : null,
       nopanel : null,
       namapanel : null,
       elcb : 'No',
@@ -134,9 +134,9 @@ export default  {
   mounted () {
     this.time = new Date().getTime();
     firebase.auth().onAuthStateChanged((user) => {
-      this.constloading = false;
       if (user) {
         this.email = user.email;
+        this.allhatchery();
         setInterval( () => {
           if (this.interval) {
             this.time = new Date().getTime();
@@ -147,6 +147,21 @@ export default  {
     });
   },
   methods : {
+    allhatchery : async function () {
+      await firebase.database().ref('/hatchery').once('value', (snapshot) => {
+        const listhatcheryx = [];
+        snapshot.forEach((childSnapshot) => {
+          const sement = {
+            id : childSnapshot.key,
+            nama : childSnapshot.val().nama,
+          };
+          listhatcheryx.push(sement);
+        })
+        this.listhatchery = listhatcheryx;
+        this.hatchery = 'Subang';
+      });
+      this.constloading = false;
+    },
     download : async function () {
       const canvas = document.querySelector("canvas");
       // const temp = new Blob([canvas], {type: 'image/svg+xml'});
@@ -186,45 +201,64 @@ export default  {
         schedule : this.newdate,
         description : this.description,
         urlImage : this.urlImage,
+      }, async (error) => {
+        if (error) {
+          this.constloading = false;
+          const alert = await alertController
+            .create({
+              cssClass: 'ion-color-success',
+              header: 'Failed',
+              subHeader: error,
+              buttons: [{
+                text: 'Ok',
+                handler: () => {
+                  window.location.href="/";
+                },
+              }],
+            });
+          return alert.present();
+        } else {
+          await firebase.database().ref('log').push({
+            qrcode : this.qrvalue,
+            hatchery : this.hatchery,
+            nopanel : this.nopanel,
+            namapanel : this.namapanel,
+            time : this.time,
+            date : this.formattgl(this.date),
+            email : this.email,
+            update : 'Create data panel.',
+            schedule : this.formattgl(this.date),
+          });
+          this.download();
+          this.constloading = false;
+          const alert = await alertController
+            .create({
+              cssClass: 'ion-color-success',
+              header: 'Success',
+              subHeader: 'Data Sent.',
+              buttons: [{
+                text: 'Ok',
+                handler: () => {
+                  window.location.href="/";
+                },
+              }],
+            });
+          this.hatchery = 'Subang';
+          this.nopanel = null;
+          this.namapanel = null;
+          this.elcb = 'No';
+          this.arrester = 'No';
+          this.grounding = 'No';
+          this.date = null;
+          this.time = null;
+          this.rating = 'G';
+          this.newdate = null;
+          this.selectPhoto = null;
+          this.urlImage = null;
+          this.interval = true;
+          return alert.present();
+        }
       });
-      await firebase.database().ref('log').push({
-        qrcode : this.qrvalue,
-        hatchery : this.hatchery,
-        nopanel : this.nopanel,
-        namapanel : this.namapanel,
-        time : this.time,
-        date : this.formattgl(this.date),
-        email : this.email,
-        update : 'Create data panel.',
-        schedule : this.formattgl(this.date),
-      });
-      this.download();
-      this.constloading = false;
-      const alert = await alertController
-        .create({
-          cssClass: 'ion-color-success',
-          header: 'Success',
-          subHeader: 'Data Sent.',
-          buttons: [{
-            text: 'Ok',
-            handler: () => {
-              window.location.href="/";
-            },
-          }],
-        });
-      this.hatchery = 'Subang';
-      this.nopanel = null;
-      this.namapanel = null;
-      this.elcb = 'No';
-      this.arrester = 'No';
-      this.grounding = 'No';
-      this.date = null;
-      this.time = null;
-      this.rating = 'G';
-      this.newdate = null;
-      this.selectPhoto = null;
-      this.urlImage = null;
-      return alert.present();
     },
     gagalCreate : async function () {
       const alert = await alertController

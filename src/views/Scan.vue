@@ -66,11 +66,11 @@
                 </ion-item>
                 <ion-item class="scaned">
                   <ion-label position="fixed" autocomplete="off">Update</ion-label>
-                  <ion-input placeholder="Update of panel" type="text" class="inputtext textright" v-model="updatepanel"></ion-input>
+                  <ion-input placeholder="Update of panel" type="text" class="inputtext textright" v-model="updatepanel" autocomplete="off"></ion-input>
                 </ion-item>
                 <ion-item class="scaned">
                   <ion-label position="floating">Description</ion-label>
-                  <ion-textarea :value="description" v-model="description"></ion-textarea>
+                  <ion-textarea :value="description" v-model="description" autocomplete="off"></ion-textarea>
                 </ion-item>
                 <div class="centercs logincs mtcs">
                   <ion-button color="primary" @click="actionUpdate">Save</ion-button>
@@ -179,32 +179,50 @@ export default  {
         description : this.description,
         urlImage : this.datascan.urlImage,
         update : this.updatepanel,
+      }, async (error) => {
+        if (error) {
+          this.constloading = false;
+          const alert = await alertController
+            .create({
+              cssClass: 'ion-color-success',
+              header: 'Failed',
+              subHeader: error,
+              buttons: [{
+                text: 'Ok',
+                handler: () => {
+                  window.location.href="/";
+                },
+              }],
+            });
+          return alert.present();
+        } else {
+          await firebase.database().ref('log').push({
+            qrcode : this.datascan.qrcode,
+            hatchery : this.datascan.hatchery,
+            nopanel : this.datascan.nopanel,
+            namapanel : this.datascan.namapanel,
+            time : timeupdate,
+            date : this.formattgl(timeupdate),
+            email : this.email,
+            update : this.updatepanel,
+            schedule : this.datascan.schedule,
+          });
+          this.constloading = false;
+          const alert = await alertController
+            .create({
+              cssClass: 'ion-color-success',
+              header: 'Success',
+              subHeader: 'Data Sent.',
+              buttons: [{
+                text: 'Ok',
+                handler: () => {
+                  window.location.href="/";
+                },
+              }],
+            });
+          return alert.present();
+        }
       });
-      await firebase.database().ref('log').push({
-        qrcode : this.datascan.qrcode,
-        hatchery : this.datascan.hatchery,
-        nopanel : this.datascan.nopanel,
-        namapanel : this.datascan.namapanel,
-        time : timeupdate,
-        date : this.formattgl(timeupdate),
-        email : this.email,
-        update : this.updatepanel,
-        schedule : this.datascan.schedule,
-      });
-      this.constloading = false;
-      const alert = await alertController
-        .create({
-          cssClass: 'ion-color-success',
-          header: 'Success',
-          subHeader: 'Data Sent.',
-          buttons: [{
-            text: 'Ok',
-            handler: () => {
-              window.location.href="/";
-            },
-          }],
-        });
-      return alert.present();
     },
     formattgl : function (date) {
       const newdate = new Date(date);

@@ -40,9 +40,17 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/History.vue')
       },
       {
+        path: 'schedule',
+        component: () => import('@/views/Schedule.vue')
+      },
+      {
+        path: 'about',
+        component: () => import('@/views/About.vue')
+      },
+      {
         path: 'tab3',
         component: () => import('@/views/Tab3.vue')
-      }
+      } 
     ]
   }
 ]
